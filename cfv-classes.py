@@ -1,9 +1,10 @@
 # The core class, everything in the card game revolves around cards
 class Card:
-    def __init__(self, name, clan, nation, grade, power, shield, critical = 1,
+    def __init__(self, cardid, name, clan, nation, grade, power, shield, critical = 1,
     skill1 = None, skill2 = None, skill3 = None, marker = None, istrigger = False,
     triggertype = None, boost = False, intercept = False, drive = 1, flavor = None,
     image = None, tags = []):
+        self.cardid = cardid
         self.name = name
         self.clan = clan
         self.nation = nation
@@ -25,6 +26,9 @@ class Card:
     def get_name(self):
         return self.name
     
+    def get_id(self):
+        return self.cardid
+    
 ### Example Little_Sage_Marron = Card("Little Sage Marron","Royal Paladin","United Sanctuary",1,8000,10000, boost = True)
 
 # Define Game Cards, Cards that will be used in the game
@@ -32,34 +36,30 @@ class Card:
 class Gamecard(Card):
     def __init__(self
                  , *args):
-#                  ,name, clan, nation, grade, power, shield, critical
-#                  ,skill1, skill2, skill3, marker, istrigger
-#                  ,triggertype, boost, intercept, drive, flavor
-#                  ,image, tags
-#                  ,faceup = True, currentpower = 0, currentcritical = 1, currentdrive = 1, equipgauge = [], isrest = False, currentshield = 0):
-#        Card.__init__(self, name, clan, nation, grade, power, shield, critical, skill1, skill2, skill3, marker, istrigger, triggertype, boost, intercept, drive, flavor, image, tags)
-#         super(Gamecard, self).__init__()
         self.__dict__ = args[0].__dict__.copy()
         self.faceup = True
-        self.currentpower = self.power
+        self.boostedpower = 0
         self.currentcritical = self.critical
         self.currentdrive = self.drive
         self.equipgauge = []
         self.isrest = False
         self.currentshield = self.shield
     
-    def counterblast(card):
+    def counter_blast(self):
         if self.faceup == True:
             self.faceup = False
         else:
             print('Error - Already Facedown')
     
-    def countercharge(card):
+    def counter_charge(self):
         if self.faceup == False:
             self.faceup = True
         else:
             print('Error - Already Faceup')
 
+    def current_power(self):
+        return self.boostedpower + self.power
+        
 
 # Define Circles
 
@@ -112,8 +112,70 @@ class Zone:
 
 
 class Player:
-    def __init__(self, name, decklist, clan = None, nation = None):
+    def __init__(self, name, decklist, handzone=None, deckzone=None
+                 ,dropzone=None, guardzone=None, triggerzone=None, bindzone=None, damagezone=None, soulzone=None, gzone=None
+                 ,assistzone=None,field = [],isactive = False, firstvan = None, clan = None, nation = None):
         self.name = name
         self.decklist = decklist
         self.clan = clan
         self.nation = nation
+        self.field = field
+        self.handzone = handzone
+        self.deckzone = deckzone
+        self.dropzone = dropzone
+        self.guardzone = guardzone
+        self.triggerzone = triggerzone
+        self.bindzone = bindzone
+        self.damagezone = damagezone
+        self.soulzone = soulzone
+        self.gzone = gzone
+        self.assistzone = assistzone
+        self.isactive = isactive
+        self.firstvan = firstvan
+        rightfront = Circle(1,1)
+        leftfront = Circle(1,3)
+        centerfront = Circle(1,2,isvanguard = True)
+        rightback = Circle(2,1)
+        leftback = Circle(2,3)
+        centerback = Circle(2,2)
+        self.field = [leftfront, centerfront, rightfront,
+                      leftback, centerback, rightback]
+        self.deckzone = Zone('Deck')
+        self.dropzone = Zone('Drop')
+        self.guardzone = Zone('Guard')
+        self.triggerzone = Zone('Trigger')
+        self.bindzone = Zone('Bind')
+        self.damagezone = Zone('Damage')
+        self.handzone = Zone('Hand')
+        self.soulzone = Zone('Soul')
+        self.gzone = Zone('G')
+        self.assistzone = Zone('Assist')
+        
+        
+    def deck_init(self):
+        self.deckzone.cardlist = []
+        for i in self.decklist:
+            if self.decklist[i] == -1:
+                self.firstvan = i
+            else:
+                for n in range(self.decklist[i]):
+                    self.deckzone.cardlist.append(i)
+        shuffle(self.deckzone.cardlist)
+        
+        
+class Skill:
+    def __init__(self, skillid, name, kind, effect, timing = []):
+        self.skillid = skillid
+        self.name = name
+        self.kind = kind
+        self.effect = effect
+        self.timing = timing
+        
+    def get_timings(self):
+        return self.timing
+    
+    def use_skill(self):
+        return skillid #here i'd want it to call the effect of that skill... somehow
+    
+    def is_continuous(self):
+        return self.kind == 'Cont'

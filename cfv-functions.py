@@ -13,7 +13,7 @@ def decide_first(you,opp):
 def shuffle(deck):
     rm.shuffle(deck)
 
-def select_from(cardlist):
+def select_from(player, cardlist):
     print('Select from the following:')
     for i in range(len(cardlist)):
         print(str(i) + ' : ' + cardlist[i].name)
@@ -24,26 +24,34 @@ def select_from(cardlist):
         else:
             print('Error - not in list')
 
-def select_zone(field):
+def select_circle(player, f):
     print('Select from the following:')
-    for i in range(len(field)):
-        print(str(i) + ' : ' + str(field[i]))
+    for i in range(len(player.f)):
+        print(str(i) + ' : ' + str(player.f))
     while True:
         selection = int(input())
-        if selection >= 0 and selection <= len(field):
-            return field[selection]
+        if selection >= 0 and selection <= len(player.f):
+            return player.f[selection]
         else:
             print('Error - not in list')
     
-def draw(num):
+def draw(player, num):
     for n in range(num):
-        if len(deckzone.cardlist) >= num:
-            drawn = deckzone.cardlist.pop()
-            handzone.add_card(drawn)
+        if len(player.deckzone.cardlist) >= num:
+            drawn = player.deckzone.cardlist.pop()
+            player.handzone.add_card(drawn)
         else:
             print('No more cards in deck - Game Over')
             # gameover procedure here
 
+def mulligan(player):
+    print('Your hand is currently:')
+    print([i.name for i in player.deckzone.cardlist])
+    print('How many cards would you like to mulligan?')
+    choice = int(input())
+    for c in range(choice):
+        
+            
 def drive_check(num,ezel = False):
     if ezel == False:
         for n in range(num):
@@ -58,7 +66,7 @@ def drive_check(num,ezel = False):
                     else:
                         print('Please Select a Circle with a Unit')
                         fieldlist = list(filter(lambda x: (x.card != None), field))
-                        powunit = select_zone(fieldlist)
+                        powunit = select_circle(fieldlist)
                         powunit.card.currentpower += 10000
                         if drawn.triggertype == 'critical':
                             critical_trigger()
@@ -124,7 +132,7 @@ def draw_trigger():
 
 def critical_trigger():
     critfield = list(filter(lambda x: (x.card != None), field))
-    critunit = select_zone(critfield)
+    critunit = select_circle(critfield)
     critunit.card.currentcritical += 1
 
 def heal_trigger():
@@ -135,7 +143,7 @@ def heal_trigger():
 
 def stand_trigger():
     standfield = list(filter(lambda x: (x.card != None), field))
-    standunit = select_zone(standfield.remove('centerfront'))
+    standunit = select_circle(standfield.remove('centerfront'))
     standunit.card.isrest = False
             
 ### end of Triggers ###
