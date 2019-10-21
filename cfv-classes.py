@@ -29,7 +29,7 @@ class Card:
     def get_id(self):
         return self.cardid
     
-### Example Little_Sage_Marron = Card("Little Sage Marron","Royal Paladin","United Sanctuary",1,8000,10000, boost = True)
+### Example Little_Sage_Marron = Card(1,"Little Sage Marron","Royal Paladin","United Sanctuary",1,8000,10000, boost = True)
 
 # Define Game Cards, Cards that will be used in the game
 
@@ -132,14 +132,14 @@ class Player:
         self.assistzone = assistzone
         self.isactive = isactive
         self.firstvan = firstvan
-        rightfront = Circle(1,1)
-        leftfront = Circle(1,3)
-        centerfront = Circle(1,2,isvanguard = True)
-        rightback = Circle(2,1)
-        leftback = Circle(2,3)
-        centerback = Circle(2,2)
-        self.field = [leftfront, centerfront, rightfront,
-                      leftback, centerback, rightback]
+        self.rightfront = Circle(1,1)
+        self.leftfront = Circle(1,3)
+        self.centerfront = Circle(1,2,isvanguard = True)
+        self.rightback = Circle(2,1)
+        self.leftback = Circle(2,3)
+        self.centerback = Circle(2,2)
+        self.field = [self.leftfront, self.centerfront, self.rightfront,
+                      self.leftback, self.centerback, self.rightback]
         self.deckzone = Zone('Deck')
         self.dropzone = Zone('Drop')
         self.guardzone = Zone('Guard')
@@ -156,11 +156,14 @@ class Player:
         self.deckzone.cardlist = []
         for i in self.decklist:
             if self.decklist[i] == -1:
-                self.firstvan = i
+                self.firstvan = Gamecard(i)
             else:
                 for n in range(self.decklist[i]):
-                    self.deckzone.cardlist.append(i)
+                    self.deckzone.cardlist.append(Gamecard(i))
         shuffle(self.deckzone.cardlist)
+    
+    def set_firstvan(self):
+        self.centerfront.call_card(self.firstvan)
         
         
 class Skill:

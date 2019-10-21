@@ -46,10 +46,16 @@ def draw(player, num):
 
 def mulligan(player):
     print('Your hand is currently:')
-    print([i.name for i in player.deckzone.cardlist])
+    print([i.name for i in player.handzone.cardlist])
     print('How many cards would you like to mulligan?')
-    choice = int(input())
-    for c in range(choice):
+    numback = 0
+    while numback <= 5 and numback >= 0:
+        numback = int(input())
+        for n in range(numback):
+            print('Please choose a card:')
+            chosen = select_from(player,handzone)
+            player.handzone.remove_card(chosen)
+            player.deckzone.add_card(chosen)
         
             
 def drive_check(num,ezel = False):
