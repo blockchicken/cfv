@@ -97,8 +97,11 @@ class Zone:
         self.name = name
         self.cardlist = cardlist
 
-    def add_card(self,card):
-        self.cardlist.append(card)
+    def add_card(self,card,bottom=False):
+        if not bottom:
+            self.cardlist.append(card)
+        else:
+            self.cardlist.insert(0,card)
         
     def remove_card(self,card):
         self.cardlist.remove(card)
@@ -167,11 +170,13 @@ class Player:
         
         
 class Skill:
-    def __init__(self, skillid, name, kind, effect, timing = []):
+    def __init__(self, skillid, name, kind, effect, requirement, area, timing = []):
         self.skillid = skillid
         self.name = name
         self.kind = kind
         self.effect = effect
+        self.requirement = requirement #ex. If cost is Soul Blast 2, check soul has >= 2 cards.
+        self.area = area
         self.timing = timing
         
     def get_timings(self):

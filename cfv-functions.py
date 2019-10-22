@@ -10,28 +10,24 @@ def decide_first(you,opp):
         player2 = you
         print('You are going Second!')
 
+def change_turnplayer():
+    if turnplayer == player1:
+        turnplayer = player2
+    elif turnplayer == player2:
+        turnplayer = player1
+        
 def shuffle(deck):
     rm.shuffle(deck)
 
-def select_from(player, cardlist):
+def select_from(z):
+    #Takes list, allows player to select from list of cards, circles, etc
     print('Select from the following:')
-    for i in range(len(cardlist)):
-        print(str(i) + ' : ' + cardlist[i].name)
+    for i in range(len(z)):
+        print(str(i) + ' : ' + z[i].name)
     while True:
         selection = int(input())
-        if selection >= 0 and selection <= len(cardlist):
-            return cardlist[selection]
-        else:
-            print('Error - not in list')
-
-def select_circle(player, f):
-    print('Select from the following:')
-    for i in range(len(player.f)):
-        print(str(i) + ' : ' + str(player.f))
-    while True:
-        selection = int(input())
-        if selection >= 0 and selection <= len(player.f):
-            return player.f[selection]
+        if selection >= 0 and selection <= len(z):
+            return z[selection]
         else:
             print('Error - not in list')
     
@@ -53,10 +49,13 @@ def mulligan(player):
         numback = int(input())
         for n in range(numback):
             print('Please choose a card:')
-            chosen = select_from(player,handzone)
+            chosen = select_from(player.handzone.cardlist)
             player.handzone.remove_card(chosen)
-            player.deckzone.add_card(chosen)
-        
+            player.deckzone.add_card(chosen,bottom=True)
+        draw(player, numback)
+        shuffle(player.deckzone.cardlist)
+        numback = -1
+    
             
 def drive_check(num,ezel = False):
     if ezel == False:
@@ -72,7 +71,7 @@ def drive_check(num,ezel = False):
                     else:
                         print('Please Select a Circle with a Unit')
                         fieldlist = list(filter(lambda x: (x.card != None), field))
-                        powunit = select_circle(fieldlist)
+                        powunit = select_from(fieldlist)
                         powunit.card.currentpower += 10000
                         if drawn.triggertype == 'critical':
                             critical_trigger()
@@ -128,28 +127,31 @@ def guard_power(zone):
 
 ### Triggers ###
 
-def front_trigger():
-    for circ in field:
+def front_trigger(player):
+    for circ in player.field:
         if circ.row == 1 and circ.card:
             circ.card.currentpower += 10000
 
-def draw_trigger():
-    draw(1)
+def draw_trigger(player):
+    draw(player,1)
 
-def critical_trigger():
-    critfield = list(filter(lambda x: (x.card != None), field))
-    critunit = select_circle(critfield)
+def critical_trigger(player):
+    critfield = list(filter(lambda x: (x.card != None), player.field))
+    critunit = select_from(critfield)
     critunit.card.currentcritical += 1
 
-def heal_trigger():
-    #if len(damagezone) >= opponent's:
-    #select card in damagezone
-    #damagezone.remove_card(selected card)
-    pass
+def heal_trigger(player,opponent):
+    if len(player.damagezone.cardlist) >= len(opponent.damagezone.cardlist):
+        #select card in damagezone
+        healcard = select_from(player.damagezone.cardlist)
+        player.damagezone.remove_card(healcard)
+        player.dropzone.add_card(healcard)
+    else:
+        pass
 
-def stand_trigger():
-    standfield = list(filter(lambda x: (x.card != None), field))
-    standunit = select_circle(standfield.remove('centerfront'))
+def stand_trigger(player):
+    standfield = list(filter(lambda x: (x.card != None), player.field))
+    standunit = select_from(standfield.remove('centerfront'))
     standunit.card.isrest = False
             
 ### end of Triggers ###
@@ -157,55 +159,55 @@ def stand_trigger():
 def sentinel():
     sentinel = True
 
-def end_of_battle():
+def end_of_battle(player):
     sentinel = False
-    if len(guardzone.cardlist) > 0:
-        for i in guardzone.cardlist:
-            guardzone.remove_card(i)
-            dropzone.add_card(i)
+    if len(player.guardzone.cardlist) > 0:
+        for i in player.guardzone.cardlist:
+            player.guardzone.remove_card(i)
+            player.dropzone.add_card(i)
 
-def add_equip_guage(circle,num):
+def add_equip_guage(player,card,num):
     for n in range(num):
-        if len(deckzone.cardlist) >= num:
-            topcard = deckzone.cardlist.pop()
-            circle.card.equipgauge.append(topcard)
+        if len(player.deckzone.cardlist) >= num:
+            topcard = player.deckzone.cardlist.pop()
+            card.equipgauge.append(topcard)
         else:
             print('No more cards in deck - Game Over')
 
-def soul_charge(num):
+def soul_charge(player,num):
     for n in range(num):
-        if len(deckzone.cardlist) >= num:
-            charged = deckzone.cardlist.pop()
-            soulzone.add_card(charged)
+        if len(player.deckzone.cardlist) >= num:
+            charged = player.deckzone.cardlist.pop()
+            player.soulzone.add_card(charged)
         else:
             print('No more cards in deck - Game Over')
 
-def soul_blast(num):
+def soul_blast(player,num):
     for n in range(num):
         print('Soulblast:')
         soulcard = select_from(soulzone)
         soulzone.remove_card(soulcard)
         dropzone.add_card(soulcard)
 
-def g_assist():
-    currentgrade = centerfront.grade
-    checked = deckzone.cardlist[:5]
+def g_assist(player):
+    currentgrade = player.centerfront.card.grade
+    checked = player.deckzone.cardlist[:5]
     selection = []
     for i in checked:
-        if checked.grade == currentgrade + 1:
+        if i.grade == currentgrade + 1:
             selection.append(i)
     if selection == []:
         return('No cards in top 5')
     selected = select_from(selection)
-    handzone.add_card(selected)
-    deckzone.remove_card(selected)
-    shuffle(deckzone)
+    player.handzone.add_card(selected)
+    player.deckzone.remove_card(selected)
+    shuffle(player.deckzone.cardlist)
     print('Select two cards to remove from the game:')
     print('First selection:')
-    firstassist = select_from(handzone.cardlist)
-    assistzone.add_card(firstassist)
-    handzone.remove_card(firstassist)
+    firstassist = select_from(player.handzone.cardlist)
+    player.assistzone.add_card(firstassist)
+    player.handzone.remove_card(firstassist)
     print('Second selection:')
-    secondassist = select_from(handzone.cardlist)
-    assistzone.add_card(secondassist)
-    handzone.remove_card(secondassist)
+    secondassist = select_from(player.handzone.cardlist)
+    player.assistzone.add_card(secondassist)
+    player.handzone.remove_card(secondassist)
