@@ -211,3 +211,67 @@ def g_assist(player):
     secondassist = select_from(player.handzone.cardlist)
     player.assistzone.add_card(secondassist)
     player.handzone.remove_card(secondassist)
+
+def stand_phase(player):
+    # check if skill prevents unit from standing during stand phase
+    # skills that activate at start of stand phase
+    # stand player's units
+    pass
+    
+def main_phase(player):
+    ###option list
+    # Call from Hand any cards with grade <= vanguard's
+    # Activate Skills, call a "get potential skills that can activate right now" list function
+    # Swap Columns (left or Right only)
+    # Enter Battle Phase
+    pass
+
+def ride_phase(player):
+    # generate list of rideable cards, ordered by Grade
+    # If list doesn't contain card += Vangaurd's grade and that grade is less than 3:
+    # g_assist(player)
+    # If list is not empty:
+    # Show list to player
+    # Player chooses one from list
+    # call Ride function
+    pass
+
+def battle_phase(player,opponent):
+    # Activate any skills on start of battle phase
+    ###option list
+    # Choose column, including Accel circles
+    # Option: If backrow has Boost, give player Boost option
+    # Select opponent's column, including access circles
+    # Activate any Skills on attack
+    ### Note this can be an attack function
+    # call Guard step function where the opponent chooses guardians from hand or interceptors and moves them to Guard circle.
+    # Calculate opponent's shield based on power + sum of shield on guard
+    # Activate any When placed on G skills, including Sentinels
+    # Drive Check if applicable
+    # Skills upon Drive Check
+    # Compare current power of attacker with opponent's target, if power >= target's power, inflict damage = attacker's critical
+    # Perform damage checks 
+    # skills upon recieving damage
+    # skills when unit is sent to dropzone from Guard circle
+    # skills when unit is sent to dropzone from field (rear guards only)
+    # skills when player's unit's attack hits or "after the battle that this unit attacked/boosted an attack at a vanguard"
+    # Return to loop for next attack of units that are not tapped
+    # Otherwise, only option left will be Procede to End Phase
+    pass
+
+def end_phase(player):
+    # gather list of end of turn skills
+    # including mandatory skills
+    # choose skills from that list
+    # once mandatory skills are done allow player to end turn
+    # end turn, continuous skills end, boosted power returns to normal, boosted crit/drive/grade etc as well.
+    pass
+
+def attack(attacker,target):
+    attacker.isrest = True
+    print('{} attacks {}.  {} Power vs {} Power.'.format(attacker.name, target.name, attacker.boostedpower, target.boostedpower))
+    if attacker.boostedpower >= target.boostedpower:
+        print('Attack hits, proceding to damage step')
+        return True
+    else:
+        return False
