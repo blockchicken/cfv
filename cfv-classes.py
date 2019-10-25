@@ -16,6 +16,8 @@ class Card:
         self.skill2 = skill2
         self.skill3 = skill3
         self.marker = marker
+        self.istrigger = istrigger
+        self.triggertype = triggertype
         self.boost = boost
         self.intercept = intercept
         self.drive = drive
@@ -65,7 +67,8 @@ class Gamecard(Card):
 
 
 class Circle:
-    def __init__(self, row, column, card = None, isaccel = False, marker = None, markercount = 0, isvanguard = False):
+    def __init__(self, name, row, column, card = None, isaccel = False, marker = None, markercount = 0, isvanguard = False):
+        self.name = name
         self.row = row
         self.column = column
         self.isaccel = isaccel
@@ -73,6 +76,7 @@ class Circle:
         self.card = card
         self.markercount = markercount
         self.isvanguard = isvanguard
+
     def add_marker(self,marker):
         self.marker = marker
         self.markercount += 1
@@ -135,12 +139,12 @@ class Player:
         self.assistzone = assistzone
         self.isactive = isactive
         self.firstvan = firstvan
-        self.rightfront = Circle(1,1)
-        self.leftfront = Circle(1,3)
-        self.centerfront = Circle(1,2,isvanguard = True)
-        self.rightback = Circle(2,1)
-        self.leftback = Circle(2,3)
-        self.centerback = Circle(2,2)
+        self.rightfront = Circle('rightfront',1,1)
+        self.leftfront = Circle('leftfront',1,3)
+        self.centerfront = Circle('centerfront',1,2,isvanguard = True)
+        self.rightback = Circle('rightback',2,1)
+        self.leftback = Circle('leftback',2,3)
+        self.centerback = Circle('centerback',2,2)
         self.field = [self.leftfront, self.centerfront, self.rightfront,
                       self.leftback, self.centerback, self.rightback]
         self.deckzone = Zone('Deck')

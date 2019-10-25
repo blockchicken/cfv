@@ -15,6 +15,12 @@ def change_turnplayer():
         turnplayer = player2
     elif turnplayer == player2:
         turnplayer = player1
+
+def get_opponent(player):
+    if player == player1:
+        return player2
+    if player == player2:
+        return player1
         
 def shuffle(deck):
     rm.shuffle(deck)
@@ -57,32 +63,32 @@ def mulligan(player):
         numback = -1
     
             
-def drive_check(num,ezel = False):
+def drive_check(player,num,ezel = False):
     if ezel == False:
         for n in range(num):
-            if len(deckzone.cardlist) >= num:
-                drawn = deckzone.cardlist.pop()
-                triggerzone.add_card(drawn)
+            if len(player.deckzone.cardlist) >= num:
+                drawn = player.deckzone.cardlist.pop()
+                player.triggerzone.add_card(drawn)
                 print('Drive Check - {}'.format(drawn.name))
                 if drawn.istrigger == True:
                     print('Get! {} Trigger! Power + 10000!'.format(drawn.triggertype))
-                    if drawn.triggertype == 'front':
-                        front_trigger()
+                    if drawn.triggertype == 'Front':
+                        front_trigger(player)
                     else:
                         print('Please Select a Circle with a Unit')
-                        fieldlist = list(filter(lambda x: (x.card != None), field))
+                        fieldlist = list(filter(lambda x: (x.card != None), player.field))
                         powunit = select_from(fieldlist)
-                        powunit.card.currentpower += 10000
-                        if drawn.triggertype == 'critical':
-                            critical_trigger()
-                        elif drawn.triggertype == 'heal':
-                            heal_trigger()                     
-                        elif drawn.triggertype == 'draw':
-                            draw_trigger()
-                        elif drawn.triggertype == 'stand':
-                            stand_trigger()
-                trigcard = triggerzone.cardlist.pop()
-                handzone.add_card(trigcard)
+                        powunit.card.boostedpower += 10000
+                        if drawn.triggertype == 'Critical':
+                            critical_trigger(player)
+                        elif drawn.triggertype == 'Heal':
+                            heal_trigger(player,get_opponent(player))                     
+                        elif drawn.triggertype == 'Draw':
+                            draw_trigger(player)
+                        elif drawn.triggertype == 'Stand':
+                            stand_trigger(player)
+                trigcard = player.triggerzone.cardlist.pop()
+                player.handzone.add_card(trigcard)
             else:
                 print('No more cards in deck - Game Over')
                 #gameover procedure here
@@ -90,34 +96,43 @@ def drive_check(num,ezel = False):
         pass
         #add in Blazing Lion, Platina Ezel skill effect
 
-def damage_check(num):
+def damage_check(player,num):
     for n in range(num):
-        if len(deckzone.cardlist) >= num:
-            drawn = deckzone.cardlist.pop()
-            triggerzone.add_card(drawn)
+        if len(player.deckzone.cardlist) >= num:
+            drawn = player.deckzone.cardlist.pop()
+            player.triggerzone.add_card(drawn)
             print('Drive Check - {}'.format(drawn.name))
             if drawn.istrigger == True:
                 print('Get! {} Trigger! Power + 10000!'.format(drawn.triggertype))
-                pass 
-                #here would go the complex Trigger Logic
-            trigcard = triggerzone.cardlist.pop()
-            damagezone.add_card(trigcard)
+                if drawn.triggertype == 'Front':
+                    front_trigger(player)
+                else:
+                    print('Please Select a Circle with a Unit')
+                    fieldlist = list(filter(lambda x: (x.card != None), player.field))
+                    powunit = select_from(fieldlist)
+                    powunit.card.boostedpower += 10000
+                    if drawn.triggertype == 'Critical':
+                        critical_trigger(player)
+                    elif drawn.triggertype == 'Heal':
+                        heal_trigger(player,get_opponent(player))                     
+                    elif drawn.triggertype == 'Draw':
+                        draw_trigger(player)
+                    elif drawn.triggertype == 'Stand':
+                        stand_trigger(player)
+            trigcard = player.triggerzone.cardlist.pop()
+            player.damagezone.add_card(trigcard)
         else:
             print('No more cards in deck - Game Over')
-    if len(deckzone.cardlist) == 0 or len(damagezone.cardlist) == 6:
+    if len(player.deckzone.cardlist) == 0 or len(player.damagezone.cardlist) == 6:
         print('Game Over')
         #Game End Procedure would be kicked off here
         
 def discard(card):
-    if card in handzone.cardlist:
-        handzone.remove_card(card)
-        dropzone.add_card(card)
+    if card in player.handzone.cardlist:
+        player.handzone.remove_card(card)
+        player.dropzone.add_card(card)
     else:
         print('Error - Card not in Hand...')
-
-def to_guard(origin,card):
-    guardzone.add_card(card)
-    origin.remove_card(card)
 
 def guard_power(zone):
     shieldsum = 0
@@ -130,7 +145,7 @@ def guard_power(zone):
 def front_trigger(player):
     for circ in player.field:
         if circ.row == 1 and circ.card:
-            circ.card.currentpower += 10000
+            circ.card.boostedpower += 10000
 
 def draw_trigger(player):
     draw(player,1)
@@ -269,9 +284,35 @@ def end_phase(player):
 
 def attack(attacker,target):
     attacker.isrest = True
-    print('{} attacks {}.  {} Power vs {} Power.'.format(attacker.name, target.name, attacker.boostedpower, target.boostedpower))
-    if attacker.boostedpower >= target.boostedpower:
+    print('{} attacks {}.  {} Power vs {} Power.'.format(attacker.name, target.name, attacker.current_power(), target.current_power()))
+    if attacker.current_power() >= target.current_power():
         print('Attack hits, proceding to damage step')
         return True
     else:
         return False
+
+def start_turn(player):
+    if turncount == 0:
+        mulligan(player1)
+        mulligan(player2)
+    turncount += 1
+    #begin continuous skills for turn
+    #start of turn skills
+
+def turn(player):
+    start_turn(player)
+    stand_phase(player)
+    ride_phase(player)
+    main_phase(player)
+    battle_phase(player,get_opponent(player))
+    end_phase(player)
+
+def game(p1,p2):
+    player1, player2 = p1, p2
+    decide_first(player1,player2)
+    turnplayer = player1
+    while True:
+        turn(turnplayer)
+        change_turnplayer()
+    
+        
