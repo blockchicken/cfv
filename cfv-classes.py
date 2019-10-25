@@ -119,24 +119,12 @@ class Zone:
 
 
 class Player:
-    def __init__(self, name, decklist, handzone=None, deckzone=None
-                 ,dropzone=None, guardzone=None, triggerzone=None, bindzone=None, damagezone=None, soulzone=None, gzone=None
-                 ,assistzone=None,field = [],isactive = False, firstvan = None, clan = None, nation = None):
+    def __init__(self, name, decklist, field = [],isactive = False, firstvan = None, clan = None, nation = None):
         self.name = name
         self.decklist = decklist
         self.clan = clan
         self.nation = nation
         self.field = field
-        self.handzone = handzone
-        self.deckzone = deckzone
-        self.dropzone = dropzone
-        self.guardzone = guardzone
-        self.triggerzone = triggerzone
-        self.bindzone = bindzone
-        self.damagezone = damagezone
-        self.soulzone = soulzone
-        self.gzone = gzone
-        self.assistzone = assistzone
         self.isactive = isactive
         self.firstvan = firstvan
         self.rightfront = Circle('rightfront',1,1)
@@ -163,11 +151,13 @@ class Player:
         self.deckzone.cardlist = []
         for i in self.decklist:
             if self.decklist[i] == -1:
-                self.firstvan = Gamecard(i)
+                self.firstvan = Gamecard(carddb[i])
             else:
                 for n in range(self.decklist[i]):
-                    self.deckzone.cardlist.append(Gamecard(i))
+                    self.deckzone.cardlist.append(Gamecard(carddb[i]))
         shuffle(self.deckzone.cardlist)
+        
+        # ex. p1dek = {5: -1, 6: 4, 7: 4, 8: 4, 9: 4, 10: 4, 11: 4, 12: 4, 13: 2, 14: 4, 15: 4, 16: 3, 17: 4, 18: 4}
     
     def set_firstvan(self):
         self.centerfront.call_card(self.firstvan)

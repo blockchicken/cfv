@@ -1,6 +1,8 @@
 import random as rm 
 
 def decide_first(you,opp):
+    global player1
+    global player2
     if rm.randint(0,1) == 0:
         player1 = you
         player2 = opp
@@ -11,6 +13,9 @@ def decide_first(you,opp):
         print('You are going Second!')
 
 def change_turnplayer():
+    global player1
+    global player2
+    global turnplayer
     if turnplayer == player1:
         turnplayer = player2
     elif turnplayer == player2:
@@ -292,9 +297,13 @@ def attack(attacker,target):
         return False
 
 def start_turn(player):
+    global player1
+    global player2
+    global turnplayer
+    global turncount
     if turncount == 0:
-        mulligan(player1)
-        mulligan(player2)
+        mulligan(player)
+        mulligan(get_opponent(player))
     turncount += 1
     #begin continuous skills for turn
     #start of turn skills
@@ -308,9 +317,18 @@ def turn(player):
     end_phase(player)
 
 def game(p1,p2):
+    global player1
+    global player2
+    global sentinel
+    global turnplayer
+    global turncount
     player1, player2 = p1, p2
     decide_first(player1,player2)
     turnplayer = player1
+    player1.deck_init()
+    player2.deck_init()
+    draw(player1,5)
+    draw(player2,5)
     while True:
         turn(turnplayer)
         change_turnplayer()
