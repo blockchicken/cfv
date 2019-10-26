@@ -46,6 +46,8 @@ class Gamecard(Card):
         self.equipgauge = []
         self.isrest = False
         self.currentshield = self.shield
+        self.canintercept = self.intercept
+        self.canboost = self.boost
     
     def counter_blast(self):
         if self.faceup == True:
@@ -97,8 +99,10 @@ class Circle:
 
 
 class Zone:
-    def __init__(self, name, cardlist = []):
+    def __init__(self, name, cardlist = None):
         self.name = name
+        if cardlist is None:
+            cardlist = []
         self.cardlist = cardlist
 
     def add_card(self,card,bottom=False):
@@ -161,6 +165,12 @@ class Player:
     
     def set_firstvan(self):
         self.centerfront.call_card(self.firstvan)
+        
+    def ride_card(self,ride):
+        # attempt When this card is ridden upon skills
+        self.soulzone.add_card(self.centerfront.card)
+        self.centerfront.card = ride
+        # attempt When Placed on VC skills
         
         
 class Skill:

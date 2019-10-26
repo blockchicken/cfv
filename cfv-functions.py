@@ -41,7 +41,19 @@ def select_from(z):
             return z[selection]
         else:
             print('Error - not in list')
-    
+
+def select_from_list(z):
+    #Takes list, allows player to select from list of cards, circles, etc
+    print('Select from the following:')
+    for i in range(len(z)):
+        print(str(i) + ' : ' + z[i])
+    while True:
+        selection = int(input())
+        if selection >= 0 and selection <= len(z):
+            return z[selection]
+        else:
+            print('Error - not in list')
+            
 def draw(player, num):
     for n in range(num):
         if len(player.deckzone.cardlist) >= num:
@@ -177,6 +189,7 @@ def stand_trigger(player):
 ### end of Triggers ###
 
 def sentinel():
+    global sentinel
     sentinel = True
 
 def end_of_battle(player):
@@ -232,11 +245,49 @@ def g_assist(player):
     player.assistzone.add_card(secondassist)
     player.handzone.remove_card(secondassist)
 
+def choose_guardians(player,restriction=None,nosentinel=False):
+    guardlist = []
+    for i in player.handzone.cardlist:
+        if nosentinel and 'Sentinel' in i.tags:
+            continue
+        elif restriction:
+            if i.grade in restriction:
+                continue
+        else:
+            guardlist.append(i)
+    while True:
+        print('Choose a guardian from your hand?')
+        print([x.name for x in guardlist])
+        guardyesno = select_from_list('Yes','No')
+        if guardyesno == 'Yes':
+            guardcard = select_from(guardlist)
+            player.guardzone.add_card(guardcard)
+            player.handzone.remove_card(guardcard)
+        else:
+            break
+    guardlist = []
+    for j in list(filter(lambda x: (x.card != None), player.field)):
+        if j.card.canintercept:
+            guardlist.append(j)
+    if guardlist != []:
+        while True:
+            print('Intercept?')
+            print([x.card.name for x in guardlist])
+            guardyesno = select_from_list('Yes','No')
+            if guardyesno == 'Yes':
+                guardcard = select_from([x.card.name for x in guardlist])
+                player.guardzone.add_card(guardcard.card)
+                player.guardcard.card=None
+            else:
+                break
+    
 def stand_phase(player):
     # check if skill prevents unit from standing during stand phase
     # skills that activate at start of stand phase
     # stand player's units
-    pass
+    unitfield = list(filter(lambda x: (x.card != None), player.field))
+    for c in unitfield:
+        c.card.isrest=False
     
 def main_phase(player):
     ###option list
@@ -244,40 +295,91 @@ def main_phase(player):
     # Activate Skills, call a "get potential skills that can activate right now" list function
     # Swap Columns (left or Right only)
     # Enter Battle Phase
-    pass
+    print('Main Phase. Please select from the following options:')
+    while True:
+        optionlist = ['Call from Hand','Activate Skill','Swap Columns','To Battle Phase']
+        selection = select_from_list(optionlist)
+        if selection == 'Call from Hand':
+            print(player.centerfront.card.grade)
+            print(player.handzone.cardlist[0].grade)
+            calllist = []
+            for i in player.handzone.cardlist:
+                if i.grade <= player.centerfront.card.grade:
+                    calllist.append(i)
+            callselect = select_from(calllist)
+            print('Which circle do you want to call to?')
+            select_from(list(filter(lambda x: (x.name != 'centerfront'), player.field))).call_card(callselect)
+        elif selection == 'Activate Skill':
+            pass
+        elif selection == 'Swap Columns':
+            colselect = select_from_list(['Right','Left'])
+            if colselect == 'Right':
+                player.rightfront.card, player.rightback.card = player.rightback.card, player.rightfront.card
+        else:
+            return
+    
 
 def ride_phase(player):
     # generate list of rideable cards, ordered by Grade
+    ridelist = []
+    for i in player.handzone.cardlist:
+        if i.grade == player.centerfront.card.grade + 1 or i.grade == player.centerfront.card.grade:
+            ridelist.append(i)
     # If list doesn't contain card += Vangaurd's grade and that grade is less than 3:
-    # g_assist(player)
-    # If list is not empty:
-    # Show list to player
-    # Player chooses one from list
-    # call Ride function
-    pass
+    if ridelist == []:
+        g_assist(player)
+    # Now post-assist, check for rideability
+    if ridelist != []:
+        sorted(ridelist, key=lambda x: x.grade, reverse=True)
+        print('Do you wish to ride one of these cards?')
+        print([x.name for x in ridelist])
+        rideyesno = select_from_list(['Yes','No'])
+        if rideyesno == 'Yes':
+            ridecard = select_from(ridelist)
+            player.ride_card(ridecard)
+            player.handzone.remove_card(ridecard)
 
 def battle_phase(player,opponent):
     # Activate any skills on start of battle phase
     ###option list
+    collist = []
+    for i in player.field:
+        if i.row == 1:
+            collist.append(i)
     # Choose column, including Accel circles
-    # Option: If backrow has Boost, give player Boost option
-    # Select opponent's column, including access circles
+    chosencol = select_from(collist)
+    behind = list(filter(lambda x: (x.column == chosencol.column and x.row == 2), player.field))[0]
+    if behind.card:
+        if behind.card.boost and behind.card.isrest == False:
+            print('Boost with {}?'.format(behind.card.name))
+            if select_from_list(['Yes','No']) == 'Yes':
+                behind.card.isrest = True
+                chosencol.card.boostedpower += behind.card.current_power()
+    # Select opponent's column, including accel circles
+    oppcollist = []
+    for i in opponent.field:
+        if i.row == 1:
+            collist.append(i)
+    targetcol = select_from(oppcollist)
     # Activate any Skills on attack
-    ### Note this can be an attack function
-    # call Guard step function where the opponent chooses guardians from hand or interceptors and moves them to Guard circle.
+    ### Attack!!!
+    choose_guardians(opponent)
     # Calculate opponent's shield based on power + sum of shield on guard
     # Activate any When placed on G skills, including Sentinels
     # Drive Check if applicable
     # Skills upon Drive Check
+    if attack(chosencol.card,targetcol.card):
+        #damage check
+        pass
     # Compare current power of attacker with opponent's target, if power >= target's power, inflict damage = attacker's critical
-    # Perform damage checks 
+
     # skills upon recieving damage
     # skills when unit is sent to dropzone from Guard circle
     # skills when unit is sent to dropzone from field (rear guards only)
     # skills when player's unit's attack hits or "after the battle that this unit attacked/boosted an attack at a vanguard"
     # Return to loop for next attack of units that are not tapped
     # Otherwise, only option left will be Procede to End Phase
-    pass
+    
 
 def end_phase(player):
     # gather list of end of turn skills
@@ -327,6 +429,8 @@ def game(p1,p2):
     turnplayer = player1
     player1.deck_init()
     player2.deck_init()
+    player1.centerfront.call_card(player1.firstvan)
+    player2.centerfront.call_card(player2.firstvan)
     draw(player1,5)
     draw(player2,5)
     while True:
