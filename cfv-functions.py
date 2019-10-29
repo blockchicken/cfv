@@ -118,7 +118,7 @@ def damage_check(player,num):
         if len(player.deckzone.cardlist) >= num:
             drawn = player.deckzone.cardlist.pop()
             player.triggerzone.add_card(drawn)
-            print('Drive Check - {}'.format(drawn.name))
+            print('Damage Check - {}'.format(drawn.name))
             if drawn.istrigger == True:
                 print('Get! {} Trigger! Power + 10000!'.format(drawn.triggertype))
                 if drawn.triggertype == 'Front':
@@ -144,16 +144,16 @@ def damage_check(player,num):
         print('Game Over')
         #Game End Procedure would be kicked off here
         
-def discard(card):
+def discard(player,card):
     if card in player.handzone.cardlist:
         player.handzone.remove_card(card)
         player.dropzone.add_card(card)
     else:
         print('Error - Card not in Hand...')
 
-def guard_power(zone):
+def guard_power(player):
     shieldsum = 0
-    for i in zone.cardlist:
+    for i in player.guardzone.cardlist:
         shieldsum += i.currentshield
     return shieldsum
 
@@ -165,21 +165,29 @@ def front_trigger(player):
             circ.card.boostedpower += 10000
 
 def draw_trigger(player):
-    draw(player,1)
+    if brandtringer and player.handzone.cardlist != []:
+        player(discard)
+    else:
+        draw(player,1)
 
 def critical_trigger(player):
-    critfield = list(filter(lambda x: (x.card != None), player.field))
-    critunit = select_from(critfield)
-    critunit.card.currentcritical += 1
+    if brandt or brandtringer:
+        player.centerfront.card.currentcritical -= 1
+    else:
+        critfield = list(filter(lambda x: (x.card != None), player.field))
+        critunit = select_from(critfield)
+        critunit.card.currentcritical += 1
 
 def heal_trigger(player,opponent):
-    if len(player.damagezone.cardlist) >= len(opponent.damagezone.cardlist):
+    if brandt or brandtringer:
+        damage_check(player)
+    elif len(player.damagezone.cardlist) >= len(opponent.damagezone.cardlist):
         #select card in damagezone
         healcard = select_from(player.damagezone.cardlist)
         player.damagezone.remove_card(healcard)
         player.dropzone.add_card(healcard)
     else:
-        pass
+        return
 
 def stand_trigger(player):
     standfield = list(filter(lambda x: (x.card != None), player.field))
@@ -188,16 +196,85 @@ def stand_trigger(player):
             
 ### end of Triggers ###
 
+def choose_markertype(player,marker):
+    if marker == 'Force':
+        if player.chosenforce:
+            return
+        markerchoice = select_from_list(['Force I','Force II'])
+        if markerchoice == 'Force I':
+            player.chosenforce = 1
+        if markerchoice == 'Force II':
+            player.chosenforce = 2
+    if marker == 'Accel':
+        if player.chosenaccel:
+            return
+        markerchoice = select_from_list(['Accel I','Accel II'])
+        if markerchoice == 'Accel I':
+            player.chosenaccel = 1
+        if markerchoice == 'Accel II':
+            player.chosenaccel = 2
+    if marker == 'Protect':
+        if player.chosenprotect:
+            return
+        markerchoice = select_from_list(['Protect I','Protect II'])
+        if markerchoice == 'Protect I':
+            player.chosenprotect = 1
+        if markerchoice == 'Protect II':
+            player.chosenprotect = 2
+
+def place_marker(player,markertype):
+    if markertype == 'Force':
+        #player selects circle
+        circlist = []
+        for i in player.field:
+            circlist.append(i)
+        chosencirc = select_from(circlist)
+        #gain player's force type
+        chosencirc.add_marker('Force {}'.format(player.chosenforce))
+        
+    elif markertype == 'Accel':
+        maxcol = 3
+        mincol = 1
+        colcount = 0
+        for i in list(filter(lambda x: (x.row == 1), player.field)):
+            colcount += 1
+            if i.col > maxcol:
+                maxcol = i.col
+            if i.col < mincol:
+                mincol = i.col
+        if colcount % 2 == 0:
+            maxcol += 1
+            player.field.append(Circle(name='Accel Circle {}'.format(maxcol),row=1,column=maxcol,isaccel=True,marker = 'Accel {}'.format(player.chosenaccel)))
+        else:
+            mincol -= 1
+            player.field.append(Circle(name='Accel Circle {}'.format(mincol),row=1,column=mincol,isaccel=True,marker = 'Accel {}'.format(player.chosenaccel)))
+        
+    elif markertype == 'Protect':
+        #player gains Protect card if ProtectI
+        if player.chosenprotect == 1:
+            player.handzone.add_card(carddb[1]) #carddb[1] = Protect I card
+        if player.chosenprotect == 2:
+            circlist = []
+            for i in list(filter(lambda x: (x.card.isvanguard == False), player.field)):
+                circlist.append(i)
+            chosencirc = select_from(circlist)
+            #gain player's protect type
+            chosencirc.add_marker('Protect 2')
+
+
 def sentinel():
     global sentinel
     sentinel = True
 
-def end_of_battle(player):
+def end_of_battle(player,opponent):
+    global sentinel
     sentinel = False
-    if len(player.guardzone.cardlist) > 0:
-        for i in player.guardzone.cardlist:
-            player.guardzone.remove_card(i)
-            player.dropzone.add_card(i)
+    if len(opponent.guardzone.cardlist) > 0:
+        for i in opponent.guardzone.cardlist:
+            opponent.guardzone.remove_card(i)
+            opponent.dropzone.add_card(i)
+    #activate player's End of battle skills
+    #activate opponent's End of battle skills
 
 def add_equip_guage(player,card,num):
     for n in range(num):
@@ -258,13 +335,13 @@ def choose_guardians(player,restriction=None,nosentinel=False):
     while True:
         print('Choose a guardian from your hand?')
         print([x.name for x in guardlist])
-        guardyesno = select_from_list('Yes','No')
+        guardyesno = select_from_list(['Yes','No'])
         if guardyesno == 'Yes':
             guardcard = select_from(guardlist)
             player.guardzone.add_card(guardcard)
             player.handzone.remove_card(guardcard)
         else:
-            break
+            return
     guardlist = []
     for j in list(filter(lambda x: (x.card != None), player.field)):
         if j.card.canintercept:
@@ -273,13 +350,13 @@ def choose_guardians(player,restriction=None,nosentinel=False):
         while True:
             print('Intercept?')
             print([x.card.name for x in guardlist])
-            guardyesno = select_from_list('Yes','No')
+            guardyesno = select_from_list(['Yes','No'])
             if guardyesno == 'Yes':
                 guardcard = select_from([x.card.name for x in guardlist])
                 player.guardzone.add_card(guardcard.card)
                 player.guardcard.card=None
             else:
-                break
+                return
     
 def stand_phase(player):
     # check if skill prevents unit from standing during stand phase
@@ -342,44 +419,57 @@ def ride_phase(player):
 def battle_phase(player,opponent):
     # Activate any skills on start of battle phase
     ###option list
-    collist = []
-    for i in player.field:
-        if i.row == 1:
-            collist.append(i)
-    # Choose column, including Accel circles
-    chosencol = select_from(collist)
-    behind = list(filter(lambda x: (x.column == chosencol.column and x.row == 2), player.field))[0]
-    if behind.card:
-        if behind.card.boost and behind.card.isrest == False:
-            print('Boost with {}?'.format(behind.card.name))
-            if select_from_list(['Yes','No']) == 'Yes':
-                behind.card.isrest = True
-                chosencol.card.boostedpower += behind.card.current_power()
-    # Select opponent's column, including accel circles
-    oppcollist = []
-    for i in opponent.field:
-        if i.row == 1:
-            collist.append(i)
-    targetcol = select_from(oppcollist)
-    # Activate any Skills on attack
-    ### Attack!!!
-    choose_guardians(opponent)
-    # Calculate opponent's shield based on power + sum of shield on guard
-    # Activate any When placed on G skills, including Sentinels
-    # Drive Check if applicable
-    # Skills upon Drive Check
-    if attack(chosencol.card,targetcol.card):
-        #damage check
-        pass
-    # Compare current power of attacker with opponent's target, if power >= target's power, inflict damage = attacker's critical
+    while True:
+        optionlist = ['Attack','To End Phase']
+        selection = select_from_list(optionlist)
+        if selection == 'Attack':
+            collist = []
+            for i in player.field:
+                if i.row == 1 and i.card and i.card.isrest == False:
+                    print(i.name, i.card.name)
+                    collist.append(i)
+            if collist == []:
+                return
+            # Choose column, including Accel circles
+            chosencol = select_from(collist)
+            behind = list(filter(lambda x: (x.column == chosencol.column and x.row == 2), player.field))[0]
+            if behind.card:
+                if behind.card.boost and behind.card.isrest == False:
+                    print('Boost with {}?'.format(behind.card.name))
+                    if select_from_list(['Yes','No']) == 'Yes':
+                        behind.card.isrest = True
+                        chosencol.card.boostedpower += behind.card.current_power()
+            # Select opponent's column, including accel circles
+            oppcollist = []
+            for i in opponent.field:
+                if i.row == 1 and i.card:
+                    print(i.name, i.card.name)
+                    oppcollist.append(i)
+            targetcol = select_from(oppcollist)
+            # Activate any Skills on attack
+            if chosencol.isvanguard == True:
+                drive_check(player,chosencol.card.currentdrive,ezel)
+            ### Attack!!!
+            choose_guardians(opponent)
+            # Calculate opponent's shield based on power + sum of shield on guard
+            targetcol.card.boostedpower += guard_power(opponent)
+            # Activate any When placed on G skills, including Sentinels
+            # Drive Check if applicable
+            # Skills upon Drive Check
+            if attack(chosencol.card,targetcol.card):
+                if targetcol.isvanguard == True:
+                    #damage check
+                    damage_check(opponent,chosencol.card.currentcritical)
+                else:
+                    print('{} is retired'.format(targetcol.card.name))
+                    targetcol.retire()
+            end_of_battle(player,opponent)
+            # skills when unit is sent to dropzone from Guard circle
+            # skills when unit is sent to dropzone from field (rear guards only)
+            # skills when player's unit's attack hits or "after the battle that this unit attacked/boosted an attack at a vanguard"
+        else:
+            return
 
-    # skills upon recieving damage
-    # skills when unit is sent to dropzone from Guard circle
-    # skills when unit is sent to dropzone from field (rear guards only)
-    # skills when player's unit's attack hits or "after the battle that this unit attacked/boosted an attack at a vanguard"
-    # Return to loop for next attack of units that are not tapped
-    # Otherwise, only option left will be Procede to End Phase
-    
 
 def end_phase(player):
     # gather list of end of turn skills

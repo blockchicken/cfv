@@ -69,19 +69,18 @@ class Gamecard(Card):
 
 
 class Circle:
-    def __init__(self, name, row, column, card = None, isaccel = False, marker = None, markercount = 0, isvanguard = False):
+    def __init__(self, name, row, column, card = None, isaccel = False, marker = None, isvanguard = False):
         self.name = name
         self.row = row
         self.column = column
         self.isaccel = isaccel
-        self.marker = marker
+        self.marker = []
         self.card = card
-        self.markercount = markercount
         self.isvanguard = isvanguard
 
-    def add_marker(self,marker):
-        self.marker = marker
-        self.markercount += 1
+    def add_marker(self,mark):
+        self.marker.append(mark)
+
     def retire(self):
         if self.card != None:
             dropzone.add_card(self.card)
@@ -123,7 +122,8 @@ class Zone:
 
 
 class Player:
-    def __init__(self, name, decklist, field = [],isactive = False, firstvan = None, clan = None, nation = None):
+    def __init__(self, name, decklist, field = [],isactive = False, firstvan = None, clan = None, nation = None
+                , chosenaccel = None, chosenforce = None, chosenprotect = None):
         self.name = name
         self.decklist = decklist
         self.clan = clan
@@ -149,6 +149,9 @@ class Player:
         self.soulzone = Zone('Soul')
         self.gzone = Zone('G')
         self.assistzone = Zone('Assist')
+        self.chosenaccel = None
+        self.chosenforce = None
+        self.chosenprotect = None
         
         
     def deck_init(self):
@@ -170,7 +173,11 @@ class Player:
         # attempt When this card is ridden upon skills
         self.soulzone.add_card(self.centerfront.card)
         self.centerfront.card = ride
+        if self.centerfront.card.marker:
+            choose_markertype(self,self.centerfront.card.marker)
+            place_marker(self,self.centerfront.card.marker)
         # attempt When Placed on VC skills
+        
         
         
 class Skill:
