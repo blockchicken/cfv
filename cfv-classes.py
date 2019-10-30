@@ -1,9 +1,9 @@
 # The core class, everything in the card game revolves around cards
 class Card:
     def __init__(self, cardid, name, clan, nation, grade, power, shield, critical = 1,
-    skill1 = None, skill2 = None, skill3 = None, marker = None, istrigger = False,
+    skills = None, marker = None, istrigger = False,
     triggertype = None, boost = False, intercept = False, drive = 1, flavor = None,
-    image = None, tags = []):
+    image = None, tags = None):
         self.cardid = cardid
         self.name = name
         self.clan = clan
@@ -12,9 +12,9 @@ class Card:
         self.power = power
         self.shield = shield
         self.critical = critical
-        self.skill1 = skill1
-        self.skill2 = skill2
-        self.skill3 = skill3
+        if skills is None:
+            skills = []
+        self.skills = skills
         self.marker = marker
         self.istrigger = istrigger
         self.triggertype = triggertype
@@ -23,6 +23,8 @@ class Card:
         self.drive = drive
         self.flavor = flavor
         self.image = image
+        if skills is None:
+            tags = []
         self.tags = tags
     
     def get_name(self):
@@ -48,6 +50,8 @@ class Gamecard(Card):
         self.currentshield = self.shield
         self.canintercept = self.intercept
         self.canboost = self.boost
+        self.names = [self.name]
+        self.gainedskills = []
     
     def counter_blast(self):
         if self.faceup == True:
@@ -91,7 +95,20 @@ class Circle:
     def call_card(self,card):
         self.retire()
         self.card = card
-        
+    
+    if self.card and self.marker:
+        for i in self.marker:
+            if i == 'Force 1':
+                self.card.boostedpower += 10000
+            if i == 'Force 2':
+                self.card.currentcritical += 1
+            if i == 'Accel 1':
+                self.card.boostedpower += 10000
+            if i == 'Accel 2':
+                self.card.boostedpower += 5000
+            if i == 'Protect 2':
+                self.card.boostedpower += 5000
+                self.card.currentshield += 10000
 
 
 # Define Zones
@@ -152,6 +169,7 @@ class Player:
         self.chosenaccel = None
         self.chosenforce = None
         self.chosenprotect = None
+        self.brandt = 0
         
         
     def deck_init(self):

@@ -165,13 +165,13 @@ def front_trigger(player):
             circ.card.boostedpower += 10000
 
 def draw_trigger(player):
-    if brandtringer and player.handzone.cardlist != []:
+    if player.brandt > 1 and player.handzone.cardlist != []:
         player(discard)
     else:
         draw(player,1)
 
 def critical_trigger(player):
-    if brandt or brandtringer:
+    if player.brandt > 0:
         player.centerfront.card.currentcritical -= 1
     else:
         critfield = list(filter(lambda x: (x.card != None), player.field))
@@ -179,7 +179,7 @@ def critical_trigger(player):
         critunit.card.currentcritical += 1
 
 def heal_trigger(player,opponent):
-    if brandt or brandtringer:
+    if player.brandt > 0:
         damage_check(player)
     elif len(player.damagezone.cardlist) >= len(opponent.damagezone.cardlist):
         #select card in damagezone
@@ -463,6 +463,8 @@ def battle_phase(player,opponent):
                 else:
                     print('{} is retired'.format(targetcol.card.name))
                     targetcol.retire()
+            if targetcol.card:
+                targetcol.card.boostedpower -= guard_power(opponent)
             end_of_battle(player,opponent)
             # skills when unit is sent to dropzone from Guard circle
             # skills when unit is sent to dropzone from field (rear guards only)
@@ -477,8 +479,26 @@ def end_phase(player):
     # choose skills from that list
     # once mandatory skills are done allow player to end turn
     # end turn, continuous skills end, boosted power returns to normal, boosted crit/drive/grade etc as well.
-    pass
-
+    for i in player.field:
+        if i.card:
+            i.card.boostedpower = 0
+            i.card.currentdrive = i.card.drive
+            i.card.currentcritical = i.card.critical
+            i.card.currentshield = i.card.shield
+            i.card.faceup = True
+            i.card.names = [i.card.name]
+            i.card.gainedskills = []
+    player.brandt = 0
+    opp = get_opponent(player)
+    for i in opp.field:
+        if i.card:
+            i.card.boostedpower = 0
+            i.card.currentdrive = i.card.drive
+            i.card.currentcritical = i.card.critical
+            i.card.currentshield = i.card.shield
+            i.card.names = [i.card.name]
+            i.card.gainedskills = []
+            
 def attack(attacker,target):
     attacker.isrest = True
     print('{} attacks {}.  {} Power vs {} Power.'.format(attacker.name, target.name, attacker.current_power(), target.current_power()))
