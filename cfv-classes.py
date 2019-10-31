@@ -67,13 +67,13 @@ class Gamecard(Card):
 
     def current_power(self):
         return self.boostedpower + self.power
-        
+       
 
 # Define Circles
 
 
 class Circle:
-    def __init__(self, name, row, column, card = None, isaccel = False, marker = None, isvanguard = False):
+    def __init__(self, name, row, column, card = None, isaccel = False, marker = None, isvanguard = False, owner = None):
         self.name = name
         self.row = row
         self.column = column
@@ -81,6 +81,7 @@ class Circle:
         self.marker = []
         self.card = card
         self.isvanguard = isvanguard
+        self.owner = owner
 
     def add_marker(self,mark):
         self.marker.append(mark)
@@ -96,21 +97,37 @@ class Circle:
         self.retire()
         self.card = card
     
-    if self.card and self.marker:
-        for i in self.marker:
-            if i == 'Force 1':
-                self.card.boostedpower += 10000
-            if i == 'Force 2':
-                self.card.currentcritical += 1
-            if i == 'Accel 1':
-                self.card.boostedpower += 10000
-            if i == 'Accel 2':
-                self.card.boostedpower += 5000
-            if i == 'Protect 2':
-                self.card.boostedpower += 5000
-                self.card.currentshield += 10000
-
-
+    def get_card_power(self):
+        if self.card:
+            markerpow = 0
+            if self.marker:
+                for i in self.marker:
+                    if i == 'Force 1' and self.owner == turnplayer.name:
+                        markerpow += 10000
+                    if i == 'Accel 1' and self.owner == turnplayer.name:
+                        markerpow += 10000
+                    if i == 'Accel 2' and self.owner == turnplayer.name:
+                        markerpow += 5000
+                    if i == 'Protect 2':
+                        markerpow += 5000
+            return self.card.current_power() + markerpow
+                        
+    def get_card_shield(self):
+        if self.card:
+            markershield = 0
+            if self.marker:
+                for i in self.marker:
+                    if i == 'Protect 2':
+                        markershield += 10000
+            return self.card.currentshield + markershield
+    
+    def get_card_critical(self):
+        if self.card:
+            if 'Force 2' in self.marker:
+                return self.card.currentcritical + 1
+            else:
+                return self.card.currentcritical
+    
 # Define Zones
 
 
@@ -141,6 +158,11 @@ class Zone:
 class Player:
     def __init__(self, name, decklist, field = [],isactive = False, firstvan = None, clan = None, nation = None
                 , chosenaccel = None, chosenforce = None, chosenprotect = None):
+        global playernames
+        if name in playernames:
+            raise ValueError('Player name already exists...')
+        else:
+            playernames.add(name)
         self.name = name
         self.decklist = decklist
         self.clan = clan
@@ -148,12 +170,12 @@ class Player:
         self.field = field
         self.isactive = isactive
         self.firstvan = firstvan
-        self.rightfront = Circle('rightfront',1,1)
-        self.leftfront = Circle('leftfront',1,3)
-        self.centerfront = Circle('centerfront',1,2,isvanguard = True)
-        self.rightback = Circle('rightback',2,1)
-        self.leftback = Circle('leftback',2,3)
-        self.centerback = Circle('centerback',2,2)
+        self.rightfront = Circle('rightfront',1,1,owner=name)
+        self.leftfront = Circle('leftfront',1,3,owner=name)
+        self.centerfront = Circle('centerfront',1,2,isvanguard = True,owner=name)
+        self.rightback = Circle('rightback',2,1,owner=name)
+        self.leftback = Circle('leftback',2,3,owner=name)
+        self.centerback = Circle('centerback',2,2,owner=name)
         self.field = [self.leftfront, self.centerfront, self.rightfront,
                       self.leftback, self.centerback, self.rightback]
         self.deckzone = Zone('Deck')

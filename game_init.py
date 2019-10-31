@@ -14,9 +14,13 @@ p2dek = {19: -1, 20: 4, 21: 4, 22: 4, 23: 4, 24: 4, 25: 4, 26: 4, 27: 2, 28: 4, 
 #note for testing purposes, these two Trial Decks are included automatically
 
 ### Global vars
-
+playernames = set()
 player1 = None
 player2 = None
 turnplayer = player1
+winner = None
+loser = None
 sentinel = None
 turncount = 0
+turnattackcount = 0
+ezel = 0

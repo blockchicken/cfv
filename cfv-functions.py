@@ -174,6 +174,7 @@ def critical_trigger(player):
     if player.brandt > 0:
         player.centerfront.card.currentcritical -= 1
     else:
+        print('Please select a unit to receive the Critical!')
         critfield = list(filter(lambda x: (x.card != None), player.field))
         critunit = select_from(critfield)
         critunit.card.currentcritical += 1
@@ -183,6 +184,7 @@ def heal_trigger(player,opponent):
         damage_check(player)
     elif len(player.damagezone.cardlist) >= len(opponent.damagezone.cardlist):
         #select card in damagezone
+        print('Please select a unit from your Damage Zone to Heal!')
         healcard = select_from(player.damagezone.cardlist)
         player.damagezone.remove_card(healcard)
         player.dropzone.add_card(healcard)
@@ -190,6 +192,7 @@ def heal_trigger(player,opponent):
         return
 
 def stand_trigger(player):
+    print('Please select a rear-guard to stand.')
     standfield = list(filter(lambda x: (x.card != None), player.field))
     standunit = select_from(standfield.remove('centerfront'))
     standunit.card.isrest = False
@@ -244,10 +247,10 @@ def place_marker(player,markertype):
                 mincol = i.col
         if colcount % 2 == 0:
             maxcol += 1
-            player.field.append(Circle(name='Accel Circle {}'.format(maxcol),row=1,column=maxcol,isaccel=True,marker = 'Accel {}'.format(player.chosenaccel)))
+            player.field.append(Circle(name='Accel Circle {}'.format(maxcol),row=1,column=maxcol,owner=player.name,isaccel=True,marker = 'Accel {}'.format(player.chosenaccel)))
         else:
             mincol -= 1
-            player.field.append(Circle(name='Accel Circle {}'.format(mincol),row=1,column=mincol,isaccel=True,marker = 'Accel {}'.format(player.chosenaccel)))
+            player.field.append(Circle(name='Accel Circle {}'.format(mincol),row=1,column=mincol,owner=player.name,isaccel=True,marker = 'Accel {}'.format(player.chosenaccel)))
         
     elif markertype == 'Protect':
         #player gains Protect card if ProtectI
@@ -447,14 +450,14 @@ def battle_phase(player,opponent):
                     oppcollist.append(i)
             targetcol = select_from(oppcollist)
             # Activate any Skills on attack
-            if chosencol.isvanguard == True:
-                drive_check(player,chosencol.card.currentdrive,ezel)
             ### Attack!!!
             choose_guardians(opponent)
             # Calculate opponent's shield based on power + sum of shield on guard
             targetcol.card.boostedpower += guard_power(opponent)
             # Activate any When placed on G skills, including Sentinels
             # Drive Check if applicable
+            if chosencol.isvanguard == True:
+                drive_check(player,chosencol.card.currentdrive,ezel)
             # Skills upon Drive Check
             if attack(chosencol.card,targetcol.card):
                 if targetcol.isvanguard == True:
@@ -474,6 +477,7 @@ def battle_phase(player,opponent):
 
 
 def end_phase(player):
+    global turnattackcount
     # gather list of end of turn skills
     # including mandatory skills
     # choose skills from that list
@@ -498,8 +502,11 @@ def end_phase(player):
             i.card.currentshield = i.card.shield
             i.card.names = [i.card.name]
             i.card.gainedskills = []
+    turnattackcount = 0
             
 def attack(attacker,target):
+    global turnattackcount
+    turnattackcount += 1
     attacker.isrest = True
     print('{} attacks {}.  {} Power vs {} Power.'.format(attacker.name, target.name, attacker.current_power(), target.current_power()))
     if attacker.current_power() >= target.current_power():
@@ -543,8 +550,10 @@ def game(p1,p2):
     player2.centerfront.call_card(player2.firstvan)
     draw(player1,5)
     draw(player2,5)
-    while True:
+    while not winner:
         turn(turnplayer)
         change_turnplayer()
+    return('Game Over - Winner: {}, Loser: {}'.format(winner,loser))
+    # here is where it would output the game result
     
         
