@@ -1,0 +1,3 @@
+skillid,name,kind,effect,requirement,area,timing,text
+1,Vstarter,Auto,"''draw(player,1)'''",,VC,,"[AUTO]:When rode upon, draw a card."
+2,Sentinel,Auto,"''discard(player,1)|sentinel()'''",''len(player.handzone.cardlist) >= 1''',GC,,"[AUTO](GC):When placed, COST [discard a card from your hand], and one of your units cannot be hit until end of that battle."
